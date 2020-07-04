@@ -1,0 +1,2 @@
+# PythonSummerSchool
+A pygamezero project
