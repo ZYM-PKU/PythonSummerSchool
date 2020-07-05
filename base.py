@@ -46,22 +46,22 @@ def init():
         if spine.image=='spine_up':
             x,y=spine.bottomleft
             for i in range(100):
-                x+=31/100
-                y-=61/100
+                x+=(spine.width/2)/100
+                y-=spine.height/100
                 spine.points.append((x,y))
             for i in range(100):
-                x+=31/100
-                y+=61/100
+                x+=(spine.width/2)/100
+                y+=spine.height/100
                 spine.points.append((x,y))
         else:
             x,y=spine.topleft
             for i in range(100):
-                x+=31/100
-                y+=61/100
+                x+=(spine.width/2)/100
+                y+=spine.height/100
                 spine.points.append((x,y))
             for i in range(100):
-                x+=31/100
-                y-=61/100
+                x+=(spine.width/2)/100
+                y-=spine.height/100
                 spine.points.append((x,y))
 
 
