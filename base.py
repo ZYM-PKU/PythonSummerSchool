@@ -4,65 +4,90 @@ import random
 #全局设置
 WIDTH = 1280
 HEIGHT = 720
-
 BOTTOM=0
+
 #地图地面
 bottoms=[]
-bottom=Actor('bottom1')
-bottom.bottomleft=(0,800)
-bottoms.append(bottom)
-BOTTOM=800-bottom.height
-bottom=Actor('bottom_half')
-bottom.bottomright=(1280,580)
-bottoms.append(bottom)
-
 #存档点
 saves=[]
-save=Actor('save')
-save.bottomleft=(0,BOTTOM)
-saves.append(save)
-
 #树木
 trees=[]
-tree=Actor('tree')
-tree.bottomleft=(100,BOTTOM)
-trees.append(tree)
-
 #苹果
 apples=[]
-apple=Actor('apple')
-apple.pos=(220,560)
-apples.append(apple)
-apple=Actor('apple')
-apple.pos=(270,522)
-apples.append(apple)
+#尖刺
+spines=[]
+
 
 #人物
 player=Actor('player_right')
-player.bottomleft=(0,BOTTOM)
-#速度
-player.vx=0
-player.vy=0
-player.staticvx=0#惯性横向速度
-player.ay=2#垂直加速度
-#跳跃
-player.jumptime=0#连续跳跃次数
-player.onbottom=True#是否在地上
-#死亡
-player.death=False
-
-#尖刺
-spines=[]
-spine=Actor('spine_up')
-spine.bottomleft=(500,BOTTOM)
-spine.points=[]
-spines.append(spine)
 
 
-played=False
 
-def init():
-    '''初始化函数，用于勾勒尖刺边界以进行边界检测'''
+music_played=False#保证死亡音乐只播放一次
+
+
+
+def reset(): 
+    global music_played,BOTTOM
+
+
+    #初始化地面
+    bottom=Actor('bottom1')
+    bottom.bottomleft=(0,800)
+    bottoms.append(bottom)
+    BOTTOM=800-bottom.height
+    bottom=Actor('bottom_half')
+    bottom.bottomright=(1280,580)
+    bottoms.append(bottom)
+
+    #初始化存档点
+    save=Actor('save')
+    save.bottomleft=(0,BOTTOM)
+    saves.append(save)
+    
+    #初始化树木
+    tree=Actor('tree')
+    tree.bottomleft=(100,BOTTOM)
+    trees.append(tree)
+
+    #初始化苹果
+    apples.clear()
+    apple=Actor('apple')
+    apple.pos=(220,560)
+    apples.append(apple)
+    apple=Actor('apple')
+    apple.pos=(270,522)
+    apples.append(apple)
+
+    #初始化尖刺
+    spines.clear()
+    spine=Actor('spine_up')
+    spine.bottomleft=(500,BOTTOM)
+    spine.points=[]
+    spines.append(spine)
+    edge_sample()
+
+
+    #初始化玩家
+    player.image='player_right'
+    player.bottomleft=(0,BOTTOM)
+    #速度
+    player.vx=0
+    player.vy=0
+    player.staticvx=0#惯性横向速度
+    player.ay=2#垂直加速度
+    #跳跃
+    player.jumptime=0#连续跳跃次数
+    player.onbottom=True#是否在地上
+    #死亡
+    player.death=False
+    music_played=False
+    music.stop()
+
+
+
+def edge_sample():
+    '''边缘采样函数，用于勾勒尖刺边缘以进行碰撞检测'''
     for spine in spines:
         if spine.image=='spine_up':
             x,y=spine.bottomleft
@@ -102,8 +127,8 @@ def draw():
     
 
 def update():
-    global played
-     #运动模块
+    global music_played
+    #运动模块
     player.vy+=player.ay
     player.vx=player.staticvx
 
@@ -142,21 +167,21 @@ def update():
             for point in spine.points:
                 if player.collidepoint(point):
                     player.death=True
-        #for apple in apples:
-        #    if player.colliderect(apple):
-        #        player.death=True
+        for apple in apples:
+            if player.colliderect(apple):
+                player.death=True
 
     #死亡处理
-    elif not played :
+    elif not music_played :
         music.play_once('fail')
         player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
-        played=True
-        clock.schedule_unique(reset,6)
+        music_played=True
         
 
     #运动
     player.left+=player.vx
     if player.bottom<=1000:player.bottom+=player.vy
+
 
 
 def on_key_down(key):
@@ -194,41 +219,6 @@ def on_key_up(key):
             if not player.image=='player_right':
                 player.staticvx=0
 
-def reset(): 
-    global played
-    if player.death:
-        music.stop()
-        #恢复尖刺
-        spines.clear()
-        spine=Actor('spine_up')
-        spine.bottomleft=(500,BOTTOM)
-        spine.points=[]
-        spines.append(spine)
-        init()
-        
-        #恢复苹果
-        apples.clear()
-        apple=Actor('apple')
-        apple.pos=(220,560)
-        apples.append(apple)
-        apple=Actor('apple')
-        apple.pos=(270,522)
-        apples.append(apple)
 
-
-        #恢复玩家
-        player.image='player_right'
-        player.bottomleft=(0,BOTTOM)
-        player.staticvx=0
-        player.vy=0
-        player.jumptime=0#连续跳跃次数
-        player.onbottom=True#是否在地上
-        player.death=False
-        played=False
-
-
-
-
-
-init()
+reset()
 pgzrun.go()
