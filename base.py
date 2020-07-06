@@ -59,6 +59,8 @@ spine.points=[]
 spines.append(spine)
 
 
+played=False
+
 def init():
     '''初始化函数，用于勾勒尖刺边界以进行边界检测'''
     for spine in spines:
@@ -100,12 +102,13 @@ def draw():
     
 
 def update():
-    #运动模块
+    global played
+     #运动模块
     player.vy+=player.ay
     player.vx=player.staticvx
 
-    #物体边界检测
     if not player.death:
+        #物体边界检测
         for bottom in bottoms:
             if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
                 player.vy=0
@@ -133,84 +136,96 @@ def update():
         for apple in apples:
             if abs(apple.left-player.left)<45:
                 animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
+        
+        #碰撞检测
+        for spine in spines:
+            for point in spine.points:
+                if player.collidepoint(point):
+                    player.death=True
+        #for apple in apples:
+        #    if player.colliderect(apple):
+        #        player.death=True
+
+    #死亡处理
+    elif not played :
+        music.play_once('fail')
+        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
+        played=True
+        clock.schedule_unique(reset,6)
+        
 
     #运动
     player.left+=player.vx
-    player.bottom+=player.vy
-    
-    #碰撞检测
-    for spine in spines:
-        for point in spine.points:
-           if player.collidepoint(point):
-               player.death=True
-    #for apple in apples:
-    #    if player.colliderect(apple):
-    #        player.death=True
-
-    #死亡处理
-    if player.death:
-        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
-        animate(player,tween='accelerate', duration=1,pos=(player.right,-100))
-        clock.schedule(reset,1)
+    if player.bottom<=1000:player.bottom+=player.vy
 
 
 def on_key_down(key):
     #运动控制
-    if key==key.RIGHT:
-        player.staticvx=8
-        player.image='player_right'
-    if key==key.LEFT:
-        player.staticvx=-8
-        player.image='player_left'
-    if key==key.SPACE:
-        if player.jumptime==2:
-            if player.onbottom:player.jumptime=0
-        if player.jumptime<2:
-            player.vy=-20
-            player.jumptime+=1
-            player.onbottom=False
+    if not player.death:
+        if key==key.RIGHT:
+            player.staticvx=8
+            player.image='player_right'
+        if key==key.LEFT:
+            player.staticvx=-8
+            player.image='player_left'
+        if key==key.SPACE:
+            if player.jumptime==2:
+                if player.onbottom:player.jumptime=0
+            if player.jumptime<2:
+                player.vy=-20
+                player.jumptime+=1
+                player.onbottom=False
 
-    #保存存档点
-    if key==key.S:
-        if player.colliderect(save) and save.image=='save':
-            save.image='saved' 
-    
+        #保存存档点
+        if key==key.S:
+            if player.colliderect(save) and save.image=='save':
+                save.image='saved' 
+    else:
+        if key==key.R :reset()
+
+
 def on_key_up(key):
     #运动控制
-    if key==key.RIGHT:
-        if not player.image=='player_left':
-            player.staticvx=0
-    if key==key.LEFT:
-        if not player.image=='player_right':
-            player.staticvx=0
+    if not player.death:
+        if key==key.RIGHT:
+            if not player.image=='player_left':
+                player.staticvx=0
+        if key==key.LEFT:
+            if not player.image=='player_right':
+                player.staticvx=0
 
 def reset(): 
-    #恢复尖刺
-    spines.clear()
-    spine=Actor('spine_up')
-    spine.bottomleft=(500,BOTTOM)
-    spine.points=[]
-    spines.append(spine)
-    init()
-    
-    #恢复苹果
-    apples.clear()
-    apple=Actor('apple')
-    apple.pos=(220,560)
-    apples.append(apple)
-    apple=Actor('apple')
-    apple.pos=(270,522)
-    apples.append(apple)
+    global played
+    if player.death:
+        music.stop()
+        #恢复尖刺
+        spines.clear()
+        spine=Actor('spine_up')
+        spine.bottomleft=(500,BOTTOM)
+        spine.points=[]
+        spines.append(spine)
+        init()
+        
+        #恢复苹果
+        apples.clear()
+        apple=Actor('apple')
+        apple.pos=(220,560)
+        apples.append(apple)
+        apple=Actor('apple')
+        apple.pos=(270,522)
+        apples.append(apple)
 
 
-    #恢复玩家
-    player.image='player_right'
-    player.bottomleft=(0,BOTTOM)
-    player.vx=0
-    player.vy=0
-    player.jumptime=0#连续跳跃次数
-    player.onbottom=True#是否在地上
-    player.death=False
+        #恢复玩家
+        player.image='player_right'
+        player.bottomleft=(0,BOTTOM)
+        player.staticvx=0
+        player.vy=0
+        player.jumptime=0#连续跳跃次数
+        player.onbottom=True#是否在地上
+        player.death=False
+        played=False
+
 
 
 
