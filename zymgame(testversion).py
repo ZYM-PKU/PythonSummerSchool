@@ -140,7 +140,7 @@ def reset():
     apple.pos=center
     apple.name="center"
     apples.append(apple)
-    for sita in range(6):
+    for sita in range(5):
         apple=Actor('apple')
         apple.pos=(center[0]+radius*math.cos(sita*30),center[1]-radius*math.sin(sita*30))
         apple.anchor=(center[0]-apple.pos[0],center[1]-apple.pos[1])
@@ -176,13 +176,13 @@ def reset():
 
     for i in range(2):
         spine=Actor('spine_up')
-        spine.bottomleft=(980+i*120,162)
+        spine.bottomleft=(980+i*130,162)
         spine.points=[]
         spine.name="top"
         spines.append(spine)
     for i in range(3):
         spine=Actor('spine_up')
-        spine.bottomleft=(503+i*120,162)
+        spine.bottomleft=(503+i*130,162)
         spine.points=[]
         spine.name="top"
         spines.append(spine)
@@ -365,7 +365,7 @@ def update():
 
         #陷阱
         for apple in apples:
-            if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top>apple.top:
+            if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
                 animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
             if apple.name in ('rotate','center'):
                 apple.angle+=1
@@ -394,9 +394,9 @@ def update():
                     if player.collidepoint(point):
                         player.death=True
 
-            #for apple in apples:
-            #    if player.colliderect(apple):
-            #        player.death=True
+            for apple in apples:
+                if player.colliderect(apple):
+                    player.death=True
 
         for button in buttons:
             if player.colliderect(button):
@@ -455,7 +455,7 @@ def on_key_down(key):
                     RESET_POS=save.bottomleft
     if player.death or test_mode:
         if key==key.R :reset()
-    if key==key.T:test_mode=True
+    if key==key.P:test_mode=True
     if key==key.ESCAPE:sys.exit(0)
 
 
