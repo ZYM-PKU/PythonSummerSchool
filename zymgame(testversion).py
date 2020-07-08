@@ -111,6 +111,10 @@ def reset():
     save.bottomright=(1280,162)
     if save.bottomleft==RESET_POS:save.image='saved'
     saves.append(save)
+    save=Actor('save')
+    save.bottomleft=(280,392)
+    if save.bottomleft==RESET_POS:save.image='saved'
+    saves.append(save)
 
     #初始化按钮
     buttons.clear()
@@ -217,7 +221,7 @@ def reset():
 
 
 
-    edge_sample()
+    edge_sample()#尖刺边界采样
 
 
     #初始化玩家
@@ -231,6 +235,7 @@ def reset():
     #跳跃
     player.jumptime=0#连续跳跃次数
     player.onbottom=True#是否在地上
+    player.anchor=player.midbottom
     #死亡
     player.death=False
     music_played=False
@@ -289,7 +294,7 @@ def edge_sample():
                 spine.points.append((x,y))
 
 
-def recover_platform():
+def recover_platform():#平台上升
     for platform in platforms:
         if platform.name=='platform1':
             animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]-160))
@@ -373,10 +378,12 @@ def update():
             if spine.name=='trap1'and abs(spine.right-player.left)<10 and player.bottom<350 :
                 if not spine.animate_acted:
                     animate(spine,tween='accelerate', duration=0.5,pos=(spine.pos[0],spine.pos[1]-1000))
+                    music.play_once('up')
                     spine.animate_acted=True
             if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
                 if not spine.animate_acted:
                     spine.image='spine_left_long'
+                    music.play_once('up')
                     spine.animate_acted=True
             if spine.name=='trap3'and player.left-spine.right>80 and player.bottom<=spine.bottom :
                 if not spine.animate_acted:
@@ -407,10 +414,12 @@ def update():
                 if buttons[0].image=='button_pressed' and not platform.animate_acted:
                     animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
                     platform.animate_acted=True
+                    music.play_once('up')
                     clock.schedule_unique(recover_platform,1)
             elif platform.name=='platform2':
                 if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
                     animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
+                    music.play_once('up')
                     platform.animate_acted=True
             elif platform.name=='platform3':
                 if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
@@ -427,6 +436,8 @@ def update():
     #运动
     player.left+=player.vx
     if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+        
+        
 
 
 
@@ -443,6 +454,9 @@ def on_key_down(key):
         if key==key.SPACE:
             if player.onbottom:player.jumptime=0
             if player.jumptime<2:
+                if player.jumptime==0:
+                    music.play_once('jump')
+                else:music.play_once('jump1')
                 player.vy=-20
                 player.jumptime+=1
                 player.onbottom=False
