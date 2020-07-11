@@ -156,6 +156,7 @@ def ending():
 
 
 def reset(): 
+    
     if current_window==1:smyreset()
     elif current_window==2:zymreset()
     elif current_window==3:zmxreset()
@@ -322,7 +323,8 @@ def update():
     else:
         #运动
         player.left+=player.vx
-        if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+        if player.bottom<=1000:
+            player.bottom+=player.vy#<1000是为了防止死亡后一直下落
 
 
 
