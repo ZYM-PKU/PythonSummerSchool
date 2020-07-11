@@ -318,7 +318,7 @@ def on_key_down(key):
                 init()
             else:    
                 reset()
-    if key==key.P:test_mode=True
+    if key==key.P:test_mode=not test_mode
     if key==key.ESCAPE:sys.exit(0)
 
 
