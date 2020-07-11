@@ -44,13 +44,6 @@ death_end=False#必死结局
 tic=0.0
 
 
-
-
-
-
-
-
-
 def init():
     global RESET_POS,music_played
     bottoms.clear()
@@ -170,7 +163,6 @@ def reset():
     elif current_window==5:ending()
 
 
-
 def edge_sample():
     '''边缘采样函数，用于勾勒尖刺边缘以进行碰撞检测'''
     level=4#采样等级，数值越小越容易发生碰撞，游戏难度越高
@@ -263,12 +255,77 @@ def draw():
     
 
 def update():
-    if current_window==0:zymupdate()
-    elif current_window==1:smyupdate()
-    elif current_window==2:zymupdate()
-    elif current_window==3:zmxupdate()
-    elif current_window==4:wgcupdate()
-    elif current_window==5:endupdate()
+    global music_played
+    #运动模块
+    player.vy+=player.ay
+    player.vx=player.staticvx
+    if not player.death:
+
+#物体边界检测
+        for bottom in bottoms:
+            if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
+                player.vy=0
+                player.bottom=bottom.top
+                player.onbottom=True
+            if bottom.top<=player.top+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
+                player.vy=0
+                player.top=bottom.bottom
+            if bottom.left<=player.left+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
+                player.vx=0
+                player.left=bottom.right
+            if bottom.left<=player.right+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
+                player.vx=0
+                player.right=bottom.left
+        for platform in platforms:
+            if platform.top<=player.bottom+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
+                player.vy=0
+                player.bottom=platform.top
+                player.onbottom=True
+            if platform.top<=player.top+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
+                if not test_mode:player.death=True
+                else:
+                    player.vy=0
+                    player.bottom=platform.top
+                    player.onbottom=True
+            if platform.left<=player.left+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :#+5偏移量为了防止平台升起时造成瞬时高度差给判断带来影响
+                player.vx=0
+                player.left=platform.right
+            if platform.left<=player.right+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :
+                player.vx=0
+                player.right=platform.left
+
+#全局边界检测
+        if player.left+player.vx<0:
+            player.left=0
+            player.vx=0
+        if player.right+player.vx>WIDTH:
+            player.right=WIDTH
+            player.vx=0
+        if player.top+player.vy<0:
+            player.top=0
+            player.vy=0
+
+        if current_window==0:zymupdate()
+        elif current_window==1:smyupdate()
+        elif current_window==2:zymupdate()
+        elif current_window==3:zmxupdate()
+        elif current_window==4:wgcupdate()
+    #死亡处理
+    elif not music_played and current_window!=5:
+        global death_count
+        death_count+=1
+        music.play_once('fail')
+        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
+        music_played=True
+        
+    if current_window==5:endupdate()
+    else:
+        #运动
+        player.left+=player.vx
+        if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+
+
+
 
 
 
@@ -1042,550 +1099,265 @@ def wgcreset():
 
 def smyupdate():
     global music_played
-    #运动模块
-    player.vy+=player.ay
-    player.vx=player.staticvx
 
-    if not player.death:
-        #物体边界检测
-        for bottom in bottoms:
-            if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.bottom=bottom.top
-                player.onbottom=True
-            if bottom.top<=player.top+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.top=bottom.bottom
-            if bottom.left<=player.left+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.left=bottom.right
-            if bottom.left<=player.right+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.right=bottom.left
-        for platform in platforms:
-            if platform.top<=player.bottom+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                player.vy=0
-                player.bottom=platform.top
-                player.onbottom=True
-            if platform.top<=player.top+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                if not test_mode:player.death=True
-                else:
-                    player.vy=0
-                    player.bottom=platform.top
-                    player.onbottom=True
-            if platform.left<=player.left+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :#+5偏移量为了防止平台升起时造成瞬时高度差给判断带来影响
-                player.vx=0
-                player.left=platform.right
-            if platform.left<=player.right+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :
-                player.vx=0
-                player.right=platform.left
+    #陷阱
+    for apple in apples:
+        if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
+            animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
+        if apple.name in ('rotate','center'):
+            apple.angle+=1
+    for spine in spines:
+        if spine.name=='trap1'and player.left-spine.right>80 and player.bottom<=spine.bottom :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.angle-=90
+                animate(spine,tween='linear', duration=5,pos=(spine.pos[0]+900,spine.pos[1]))
+                spine.animate_acted=True
+        if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.image='spine_left_long'
+                spine.animate_acted=True
+        
 
-        #全局边界检测
-        if player.left+player.vx<0:
-            player.left=0
-            player.vx=0
-        if player.right+player.vx>WIDTH:
-            player.right=WIDTH
-            player.vx=0
-        if player.top+player.vy<0:
-            player.top=0
-            player.vy=0
-
-
-        #陷阱
-        for apple in apples:
-            if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
-                animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
-            if apple.name in ('rotate','center'):
-                apple.angle+=1
+    
+    if not test_mode:
+        #碰撞检测
         for spine in spines:
-            if spine.name=='trap1'and player.left-spine.right>80 and player.bottom<=spine.bottom :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.angle-=90
-                    animate(spine,tween='linear', duration=5,pos=(spine.pos[0]+900,spine.pos[1]))
-                    spine.animate_acted=True
-            if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.image='spine_left_long'
-                    spine.animate_acted=True
-            
-
-        
-        if not test_mode:
-            #碰撞检测
-            for spine in spines:
-                if spine.name in ("trap1","trap2") and player.colliderect(spine):
-                    player.death=True
-                for point in spine.points:
-                    if player.collidepoint(point):
-                        player.death=True
-
-            for apple in apples:
-                if player.colliderect(apple):
+            if spine.name in ("trap1","trap2") and player.colliderect(spine):
+                player.death=True
+            for point in spine.points:
+                if player.collidepoint(point):
                     player.death=True
 
-        for button in buttons:
-            if player.colliderect(button):
-                button.image='button_pressed'
-                button.bottomright=(1280,BOTTOM)
-        for platform in platforms:
-            if platform.name=='platform1':
-                if buttons[0].image=='button_pressed' and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
-                    platform.animate_acted=True
-                    clock.schedule_unique(recover_platform,1)
-            elif platform.name=='platform2':
-                if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
-                    platform.animate_acted=True
-            elif platform.name=='platform3':
-                if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
-                    platform.animate_acted=True
+        for apple in apples:
+            if player.colliderect(apple):
+                player.death=True
 
-    #死亡处理
-    elif not music_played :
-        global death_count
-        death_count+=1
-        music.play_once('fail')
-        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
-        music_played=True
-        
+    for button in buttons:
+        if player.colliderect(button):
+            button.image='button_pressed'
+            button.bottomright=(1280,BOTTOM)
+    for platform in platforms:
+        if platform.name=='platform1':
+            if buttons[0].image=='button_pressed' and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
+                platform.animate_acted=True
+                clock.schedule_unique(recover_platform,1)
+        elif platform.name=='platform2':
+            if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
+                platform.animate_acted=True
+        elif platform.name=='platform3':
+            if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
+                platform.animate_acted=True
 
-    #运动
-    player.left+=player.vx
-    if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+
 
 def zymupdate():
     global music_played
-    #运动模块
-    player.vy+=player.ay
-    player.vx=player.staticvx
-
-    if not player.death:
-        #物体边界检测
-        for bottom in bottoms:
-            if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.bottom=bottom.top
-                player.onbottom=True
-            if bottom.top<=player.top+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.top=bottom.bottom
-            if bottom.left<=player.left+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.left=bottom.right
-            if bottom.left<=player.right+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.right=bottom.left
-        for platform in platforms:
-            if platform.top<=player.bottom+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                player.vy=0
-                player.bottom=platform.top
-                player.onbottom=True
-            if platform.top<=player.top+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                if not test_mode:player.death=True
-                else:
-                    player.vy=0
-                    player.bottom=platform.top
-                    player.onbottom=True
-            if platform.left<=player.left+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :#+5偏移量为了防止平台升起时造成瞬时高度差给判断带来影响
-                player.vx=0
-                player.left=platform.right
-            if platform.left<=player.right+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :
-                player.vx=0
-                player.right=platform.left
-
-        #全局边界检测
-        if player.left+player.vx<0:
-            player.left=0
-            player.vx=0
-        if player.right+player.vx>WIDTH:
-            player.right=WIDTH
-            player.vx=0
-        if player.top+player.vy<0:
-            player.top=0
-            player.vy=0
 
 
-        #陷阱
-        for apple in apples:
-            if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
-                animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
-            if apple.name in ('rotate','center'):
-                apple.angle+=1
+    #陷阱
+    for apple in apples:
+        if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
+            animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
+        if apple.name in ('rotate','center'):
+            apple.angle+=1
+    for spine in spines:
+        if spine.name=='trap1'and abs(spine.right-player.left)<10 and player.bottom<350 :
+            if not spine.animate_acted:
+                animate(spine,tween='accelerate', duration=0.5,pos=(spine.pos[0],spine.pos[1]-1000))
+                sounds.up.play()
+                spine.animate_acted=True
+        if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
+            if not spine.animate_acted:
+                spine.image='spine_left_long'
+                sounds.up.play()
+                spine.animate_acted=True
+        if spine.name=='trap3'and player.left-spine.right>80 and player.bottom<=spine.bottom :
+            if not spine.animate_acted:
+                spine.angle-=90
+                animate(spine,tween='linear', duration=5,pos=(spine.pos[0]+900,spine.pos[1]))
+                spine.animate_acted=True
+
+    
+    if not test_mode:
+        #碰撞检测
         for spine in spines:
-            if spine.name=='trap1'and abs(spine.right-player.left)<10 and player.bottom<350 :
-                if not spine.animate_acted:
-                    animate(spine,tween='accelerate', duration=0.5,pos=(spine.pos[0],spine.pos[1]-1000))
-                    sounds.up.play()
-                    spine.animate_acted=True
-            if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
-                if not spine.animate_acted:
-                    spine.image='spine_left_long'
-                    sounds.up.play()
-                    spine.animate_acted=True
-            if spine.name=='trap3'and player.left-spine.right>80 and player.bottom<=spine.bottom :
-                if not spine.animate_acted:
-                    spine.angle-=90
-                    animate(spine,tween='linear', duration=5,pos=(spine.pos[0]+900,spine.pos[1]))
-                    spine.animate_acted=True
-
-        
-        if not test_mode:
-            #碰撞检测
-            for spine in spines:
-                if spine.name in ("trap1","trap2","trap3") and player.colliderect(spine):
-                    player.death=True
-                for point in spine.points:
-                    if player.collidepoint(point):
-                        player.death=True
-
-            for apple in apples:
-                if player.colliderect(apple):
+            if spine.name in ("trap1","trap2","trap3") and player.colliderect(spine):
+                player.death=True
+            for point in spine.points:
+                if player.collidepoint(point):
                     player.death=True
 
-        for button in buttons:
-            if player.colliderect(button):
-                button.image='button_pressed'
-                button.bottomright=(1280,BOTTOM)
-        for platform in platforms:
-            if platform.name=='platform1':
-                if buttons[0].image=='button_pressed' and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
-                    platform.animate_acted=True
-                    sounds.up.play()
-                    clock.schedule_unique(recover_platform,1)
-            elif platform.name=='platform2':
-                if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
-                    platform.animate_acted=True
-            elif platform.name=='platform3':
-                if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
-                    sounds.up.play()
-                    platform.animate_acted=True
+        for apple in apples:
+            if player.colliderect(apple):
+                player.death=True
 
-    #死亡处理
-    elif not music_played :
-        global death_count
-        death_count+=1
-        music.play_once('fail')
-        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
-        music_played=True
-        
+    for button in buttons:
+        if player.colliderect(button):
+            button.image='button_pressed'
+            button.bottomright=(1280,BOTTOM)
+    for platform in platforms:
+        if platform.name=='platform1':
+            if buttons[0].image=='button_pressed' and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
+                platform.animate_acted=True
+                sounds.up.play()
+                clock.schedule_unique(recover_platform,1)
+        elif platform.name=='platform2':
+            if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
+                platform.animate_acted=True
+        elif platform.name=='platform3':
+            if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
+                sounds.up.play()
+                platform.animate_acted=True
 
-    #运动
-    player.left+=player.vx
-    if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+    
         
         
 def zmxupdate():
     global music_played
 
-#运动模块
-    player.vy+=player.ay
-    player.vx=player.staticvx
-    if not player.death:
-
-#物体边界检测
-        for bottom in bottoms:
-            if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.bottom=bottom.top
-                player.onbottom=True
-            if bottom.top<=player.top+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.top=bottom.bottom
-            if bottom.left<=player.left+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.left=bottom.right
-            if bottom.left<=player.right+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.right=bottom.left
-        for platform in platforms:
-            if platform.top<=player.bottom+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                player.vy=0
-                player.bottom=platform.top
-                player.onbottom=True
-            if platform.top<=player.top+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                if not test_mode:player.death=True
-                else:
-                    player.vy=0
-                    player.bottom=platform.top
-                    player.onbottom=True
-            if platform.left<=player.left+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :#+5偏移量为了防止平台升起时造成瞬时高度差给判断带来影响
-                player.vx=0
-                player.left=platform.right
-            if platform.left<=player.right+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :
-                player.vx=0
-                player.right=platform.left
-
-#全局边界检测
-        if player.left+player.vx<0:
-            player.left=0
-            player.vx=0
-        if player.right+player.vx>WIDTH:
-            player.right=WIDTH
-            player.vx=0
-        if player.top+player.vy<0:
-            player.top=0
-            player.vy=0
-
-
 #陷阱
-        for apple in apples:
-            if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
-                animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
-            if apple.name in ('rotate','center'):
-                apple.angle+=1
-        for spine in spines:
-            if spine.name=='trap1'and abs(spine.right-player.left)<10 and player.bottom<350 :
-                if not spine.animate_acted:
-                    animate(spine,tween='accelerate', duration=0.5,pos=(spine.pos[0],spine.pos[1]-1000))
-                    sounds.up.play()
-                    spine.animate_acted=True
-            if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
-                if not spine.animate_acted:
-                    spine.image='spine_left_long'
-                    sounds.up.play()
-                    spine.animate_acted=True
-            if spine.name=='trap3'and player.left-spine.right>80 and player.bottom<=spine.bottom :
-                if not spine.animate_acted:
-                    spine.angle-=90
-                    animate(spine,tween='linear', duration=5,pos=(spine.pos[0]+1020,spine.pos[1]))
-                    spine.animate_acted=True        
-        if not test_mode:
+    for apple in apples:
+        if apple.name=='normal' and abs(apple.left-player.left)<45 and player.top+20>apple.top:
+            animate(apple,tween='bounce_end', duration=0.1,pos=(apple.pos[0],BOTTOM-apple.height/2))
+        if apple.name in ('rotate','center'):
+            apple.angle+=1
+    for spine in spines:
+        if spine.name=='trap1'and abs(spine.right-player.left)<10 and player.bottom<350 :
+            if not spine.animate_acted:
+                animate(spine,tween='accelerate', duration=0.5,pos=(spine.pos[0],spine.pos[1]-1000))
+                sounds.up.play()
+                spine.animate_acted=True
+        if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
+            if not spine.animate_acted:
+                spine.image='spine_left_long'
+                sounds.up.play()
+                spine.animate_acted=True
+        if spine.name=='trap3'and player.left-spine.right>80 and player.bottom<=spine.bottom :
+            if not spine.animate_acted:
+                spine.angle-=90
+                animate(spine,tween='linear', duration=5,pos=(spine.pos[0]+1020,spine.pos[1]))
+                spine.animate_acted=True        
+    if not test_mode:
 
 #碰撞检测
-            for spine in spines:
-                if spine.name in ("trap1","trap2","trap3") and player.colliderect(spine):
+        for spine in spines:
+            if spine.name in ("trap1","trap2","trap3") and player.colliderect(spine):
+                player.death=True
+            for point in spine.points:
+                if player.collidepoint(point):
                     player.death=True
-                for point in spine.points:
-                    if player.collidepoint(point):
-                        player.death=True
-            for apple in apples:
-                if player.colliderect(apple):
-                    player.death=True
-        for button in buttons:
-            if player.colliderect(button):
-                button.image='button_pressed'
-                button.bottomright=(1280,BOTTOM)
-        for platform in platforms:
-            if platform.name=='platform1':
-                if buttons[0].image=='button_pressed' and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
-                    platform.animate_acted=True
-                    sounds.up.play()
-                    clock.schedule_unique(recover_platform,1)
-            elif platform.name=='platform2':
-                if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
-                    sounds.up.play()
-                    platform.animate_acted=True
-            elif platform.name=='platform3':
-                if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
-                    platform.animate_acted=True
+        for apple in apples:
+            if player.colliderect(apple):
+                player.death=True
+    for button in buttons:
+        if player.colliderect(button):
+            button.image='button_pressed'
+            button.bottomright=(1280,BOTTOM)
+    for platform in platforms:
+        if platform.name=='platform1':
+            if buttons[0].image=='button_pressed' and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.3,pos=(platform.pos[0],platform.pos[1]+160))
+                platform.animate_acted=True
+                sounds.up.play()
+                clock.schedule_unique(recover_platform,1)
+        elif platform.name=='platform2':
+            if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
+                sounds.up.play()
+                platform.animate_acted=True
+        elif platform.name=='platform3':
+            if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
+                platform.animate_acted=True
 
-#死亡处理
-    elif not music_played :
-        global death_count
-        death_count+=1
-        music.play_once('fail')
-        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
-        music_played=True
-        
-#运动
-    player.left+=player.vx
-    if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+
 
 
 
 def wgcupdate():
     global music_played
-    #运动模块
-    player.vy+=player.ay
-    player.vx=player.staticvx
-
-    if not player.death:
-        #物体边界检测
-        for bottom in bottoms:
-            if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.bottom=bottom.top
-                player.onbottom=True
-            if bottom.top<=player.top+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.top=bottom.bottom
-            if bottom.left<=player.left+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.left=bottom.right
-            if bottom.left<=player.right+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.right=bottom.left
-        for platform in platforms:
-            if platform.top<=player.bottom+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                player.vy=0
-                player.bottom=platform.top
-                player.onbottom=True
-            if platform.top<=player.top+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                if not test_mode:player.death=True
-                else:
-                    player.vy=0
-                    player.bottom=platform.top
-                    player.onbottom=True
-            if platform.left<=player.left+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :#+5偏移量为了防止平台升起时造成瞬时高度差给判断带来影响
-                player.vx=0
-                player.left=platform.right
-            if platform.left<=player.right+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :
-                player.vx=0
-                player.right=platform.left
-
-        #全局边界检测
-        if player.left+player.vx<0:
-            player.left=0
-            player.vx=0
-        if player.right+player.vx>WIDTH:
-            player.right=WIDTH
-            player.vx=0
-        if player.top+player.vy<0:
-            player.top=0
-            player.vy=0
 
 
-        #陷阱
+    #陷阱
+    
+    for spine in spines:
+        if spine.name=='trap1'and player.left-spine.right>10 and player.bottom<=spine.bottom :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.angle-=90
+                animate(spine,tween='linear', duration=4,pos=(spine.pos[0]+1000,spine.pos[1]))
+                spine.animate_acted=True
+        if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.image='spine_left_long'
+                spine.animate_acted=True
+        if spine.name=='trap3'and player.height-spine.height<=10 and spine.left<=player.right:
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.angle-=0
+                animate(spine,tween='linear', duration=2,pos=(spine.pos[0],spine.pos[0]-900))
+                spine.animate_acted=True
+        if spine.name=='trap4'and player.right>=(720) and player.bottom>=( 300) :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.angle-=90
+                animate(spine,tween='linear', duration=1,pos=(spine.pos[0]+1300,spine.pos[1]))
+                spine.animate_acted=True
+                
+        if spine.name=='trap5'and player.right>=(620) and player.bottom<=(100) :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.angle-=0
+                animate(spine,tween='linear', duration=5,pos=(spine.pos[0]-1900,spine.pos[1]))
+                spine.animate_acted=True
+        if spine.name=='trap6'and player.right>=(1100) and player.top>=550 :
+            if not spine.animate_acted:
+                sounds.up.play()
+                spine.angle-=0
+                animate(spine,tween='linear', duration=1,pos=(spine.pos[0]+1000,spine.pos[1]))
+                spine.animate_acted=True
+                
         
+
+    
+    if not test_mode:
+        #碰撞检测
         for spine in spines:
-            if spine.name=='trap1'and player.left-spine.right>10 and player.bottom<=spine.bottom :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.angle-=90
-                    animate(spine,tween='linear', duration=4,pos=(spine.pos[0]+1000,spine.pos[1]))
-                    spine.animate_acted=True
-            if spine.name=='trap2'and spine.right-player.left>3 and player.bottom<=spine.top :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.image='spine_left_long'
-                    spine.animate_acted=True
-            if spine.name=='trap3'and player.height-spine.height<=10 and spine.left<=player.right:
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.angle-=0
-                    animate(spine,tween='linear', duration=2,pos=(spine.pos[0],spine.pos[0]-900))
-                    spine.animate_acted=True
-            if spine.name=='trap4'and player.right>=(720) and player.bottom>=( 300) :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.angle-=90
-                    animate(spine,tween='linear', duration=1,pos=(spine.pos[0]+1300,spine.pos[1]))
-                    spine.animate_acted=True
-                    
-            if spine.name=='trap5'and player.right>=(620) and player.bottom<=(100) :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.angle-=0
-                    animate(spine,tween='linear', duration=5,pos=(spine.pos[0]-1900,spine.pos[1]))
-                    spine.animate_acted=True
-            if spine.name=='trap6'and player.right>=(1100) and player.top>=550 :
-                if not spine.animate_acted:
-                    sounds.up.play()
-                    spine.angle-=0
-                    animate(spine,tween='linear', duration=1,pos=(spine.pos[0]+1000,spine.pos[1]))
-                    spine.animate_acted=True
-                    
-            
+            if spine.name in ("trap1","trap2","trap3","trap4","trap5","trap6","trap7") and player.colliderect(spine):
+                player.death=True
+            else:
+                for point in spine.points:
+                    if player.collidepoint(point):
+                        player.death=True
 
         
-        if not test_mode:
-            #碰撞检测
-            for spine in spines:
-                if spine.name in ("trap1","trap2","trap3","trap4","trap5","trap6","trap7") and player.colliderect(spine):
-                    player.death=True
-                else:
-                    for point in spine.points:
-                        if player.collidepoint(point):
-                            player.death=True
 
-            
+    
+    for platform in platforms:
+        if platform.name=='platform2':
+            if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
+                platform.animate_acted=True
+        elif platform.name=='platform3':
+            if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
+                animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
+                platform.animate_acted=True
 
-        
-        for platform in platforms:
-            if platform.name=='platform2':
-                if player.right<platform.right and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='linear', duration=4,pos=(platform.pos[0],platform.pos[1]-600))
-                    platform.animate_acted=True
-            elif platform.name=='platform3':
-                if player.left>platform.left and player.bottom==platform.top and not platform.animate_acted:
-                    animate(platform,tween='accelerate', duration=0.5,pos=(platform.pos[0],platform.pos[1]+1000))
-                    platform.animate_acted=True
-
-    #死亡处理
-    elif not music_played :
-        global death_count
-        death_count+=1
-        music.play_once('fail')
-        player.image='player_left_dead' if player.image=='player_left' else 'player_right_dead'
-        music_played=True
-        
-
-    #运动
-    player.left+=player.vx
-    if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
+    
 
 
 def endupdate():
-    global music_played
-    #运动模块
-    player.vy+=player.ay
-    player.vx=player.staticvx
-
-    if not player.death:
-        #物体边界检测
-        for bottom in bottoms:
-            if bottom.top<=player.bottom+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.bottom=bottom.top
-                player.onbottom=True
-            if bottom.top<=player.top+player.vy<=bottom.bottom and player.left<bottom.right and player.right>bottom.left :
-                player.vy=0
-                player.top=bottom.bottom
-            if bottom.left<=player.left+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.left=bottom.right
-            if bottom.left<=player.right+player.vx<=bottom.right and player.bottom>bottom.top and player.top<bottom.bottom :
-                player.vx=0
-                player.right=bottom.left
-        for platform in platforms:
-            if platform.top<=player.bottom+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                player.vy=0
-                player.bottom=platform.top
-                player.onbottom=True
-            if platform.top<=player.top+player.vy<=platform.bottom and player.left<platform.right and player.right>platform.left :
-                if not test_mode:player.death=True
-                else:
-                    player.vy=0
-                    player.bottom=platform.top
-                    player.onbottom=True
-            if platform.left<=player.left+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :#+5偏移量为了防止平台升起时造成瞬时高度差给判断带来影响
-                player.vx=0
-                player.left=platform.right
-            if platform.left<=player.right+player.vx<=platform.right and player.bottom>platform.top+5 and player.top<platform.bottom :
-                player.vx=0
-                player.right=platform.left
-
-        #全局边界检测
-        if player.left+player.vx<0:
-            player.left=0
-            player.vx=0
-        if player.right+player.vx>WIDTH:
-            player.right=WIDTH
-            player.vx=0
-        if player.top+player.vy<0:
-            player.top=0
-            player.vy=0
+    global music_played,death_count
+    
     
     a_num=len(apples)
     if a_num<=100:
@@ -1611,6 +1383,7 @@ def endupdate():
         apples.append(apple)
         if not death_end:
             animate(apple,tween='accelerate', duration=1,pos=(apple.pos[0],apple.pos[1]+1000))
+            death_count+=1
             death_end=True
 
     for apple in apples:
@@ -1622,7 +1395,6 @@ def endupdate():
     player.jumptime=0#无限跳跃
     player.left+=player.vx
     if player.bottom<=1000:player.bottom+=player.vy#<1000是为了防止死亡后一直下落
-
 
 
 init()
