@@ -1,8 +1,10 @@
+# coding=utf-8
 import sys
 import time
 import math
 import pgzrun
 import random
+
 
 #全局设置
 WIDTH = 1280
@@ -40,6 +42,14 @@ current_window=0#当前窗口（0表示初始化界面）
 current_y=-200#结尾字幕位置
 death_end=False#必死结局
 tic=0.0
+
+
+
+
+
+
+
+
 
 def init():
     global RESET_POS,music_played
@@ -232,24 +242,24 @@ def draw():
     for apple in apples:apple.draw()
     player.draw()
 
-    screen.draw.text(f"Deaths: {death_count}",(0, 0),gcolor="green",fontsize=30)
+    screen.draw.text(f"Deaths: {death_count}",(0, 0),gcolor="green",fontsize=30,fontname="comic")
     if player.death:
-        if current_window<5:screen.draw.text("           GAME OVER\n------------------------------------\nPRESS 'R' TO CONTINUE",(230, 250), shadow=(2,2), scolor="#202020",fontsize=100)
-        else: screen.draw.text("           GAME OVER\n------------------------------------\n    PRESS 'Esc' To Exit",(230, 250), shadow=(2,2), scolor="#202020",fontsize=100)
+        if current_window<5:screen.draw.text("            GAME OVER\n--------------------------------\n PRESS 'R' TO CONTINUE",(120, 180), shadow=(2,2), scolor="#202020",fontsize=80,fontname="comic")
+        else: screen.draw.text("            GAME OVER\n-------------------------------\n     PRESS 'Esc' To Exit",(120,180), shadow=(2,2), scolor="#202020",fontsize=80,fontname="comic")
     if current_window==0 and not player.death:
-        screen.draw.text("         I WANNA\n      BE THE GUY",(250, 100), shadow=(2,2), scolor="#202020",gcolor="red",fontsize=120)
-        screen.draw.text("Use left/right arrow keys to move, space to jump and 's' to save",(340, 350),color="black",fontsize=30)
-        screen.draw.text("Version: 2.1.0",(1050, 680),gcolor="cyan",fontsize=50)
-        screen.draw.text("POWERED BY PYTHON",(250, 600), color=(255,127,80),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
+        screen.draw.text("         I WANNA\n       BE THE GUY",(130, 100), shadow=(2,2), scolor="#202020",gcolor="red",fontsize=100,fontname="comic")
+        screen.draw.text("Use left/right arrow keys to move, space to jump and 's' to save",(200, 380),color="black",fontsize=30,fontname="comic")
+        screen.draw.text("Version: 2.1.0",(1080, 680),gcolor="cyan",fontsize=30,fontname="comic")
+        screen.draw.text("POWERED BY PYTHON",(200, 550), color=(255,127,80),fontsize=80,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
     if current_window==5:
-        if current_y<=2150:current_y+=1
-        screen.draw.text("Thanks for playing!",(250, current_y), shadow=(2,2), scolor="#202020",gcolor="cyan",fontsize=120)
-        screen.draw.text("Developers:",(150, current_y-500), color=(220,20,60),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
-        screen.draw.text("Zhao YiMing",(550, current_y-700), color=(255,215,0),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
-        screen.draw.text("Zhang manxi",(200, current_y-900), color=(255,182,193),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
-        screen.draw.text("Shen mingyu",(480, current_y-1100), color=(255,105,180),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
-        screen.draw.text("Wang gongchen",(300, current_y-1300), color=(0,191,255),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
-        screen.draw.text(f"    Total Deaths: {death_count}",(280, current_y-2000), color=(0,255,127),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8)
+        if current_y<=2050:current_y+=1
+        screen.draw.text("Thanks for playing!",(120, current_y), shadow=(2,2), scolor="#202020",gcolor="cyan",fontsize=120,fontname="comic")
+        screen.draw.text("Developers:",(150, current_y-500), color=(220,20,60),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
+        screen.draw.text("Zhao YiMing",(550, current_y-700), color=(255,215,0),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
+        screen.draw.text("Zhang manxi",(200, current_y-900), color=(255,182,193),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
+        screen.draw.text("Shen mingyu",(480, current_y-1100), color=(255,105,180),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
+        screen.draw.text("Wang gongchen",(300, current_y-1300), color=(0,191,255),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
+        screen.draw.text(f"Total Deaths: {death_count}",(250, current_y-2000), color=(0,255,127),fontsize=100,owidth=1.5, ocolor="black", alpha=0.8,fontname="comic")
     
 
 def update():

@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['game.py'],
+a = Analysis(['iwanna.py'],
              pathex=['D:\\Code\\python\\summerschool\\PythonSummerSchool'],
              binaries=[],
              datas=[],
@@ -19,15 +19,19 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
           [],
-          name='game',
+          exclude_binaries=True,
+          name='iwanna',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          upx_exclude=[],
-          runtime_tmpdir=None,
-          console=False )
+          console=False , icon='apple.ico')
+coll = COLLECT(exe,
+               a.binaries,
+               a.zipfiles,
+               a.datas,
+               strip=False,
+               upx=True,
+               upx_exclude=[],
+               name='iwanna')
